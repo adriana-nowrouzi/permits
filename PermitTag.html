@@ -1297,7 +1297,8 @@ html[data-theme="dark"] .em-cancel:hover { color:#E2DECA; border-color:rgba(255,
 .em-go:hover { background: var(--green-dk); }
 /* ── Quick-checkbox floating button ── */
 #cb-fab-wrap{ position:fixed; right:22px; bottom:22px; z-index:900; display:flex; flex-direction:column; align-items:flex-end; gap:10px; }
-#shell[data-mode="fill"] #cb-fab-wrap{ display:none; }
+#shell[data-mode="fill"] #cb-fab-wrap,
+#shell[data-mode="letters"] #cb-fab-wrap{ display:none; }
 #cb-fab{ display:inline-flex; align-items:center; gap:6px; font:inherit; font-size:14px; font-weight:800; letter-spacing:.2px;
   color:#fff; background:var(--green,#0F6E56); border:none; border-radius:26px; padding:13px 20px; cursor:pointer;
   box-shadow:0 6px 18px rgba(15,110,86,.35); transition:transform .06s ease, background .15s ease, box-shadow .15s ease; }
@@ -1417,6 +1418,28 @@ html[data-theme="dark"] .em-cancel:hover { color:#E2DECA; border-color:rgba(255,
 #shell[data-mode="fill"] #rpanel{ display:none; }
 #shell[data-mode="fill"] #steps{ display:none; }
 #shell[data-mode="fill"] #fill-panel{ display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; background:var(--bg); }
+
+#letters-panel{ display:none; }
+#shell[data-mode="letters"] #viewer,
+#shell[data-mode="letters"] #rpanel{ display:none; }
+#shell[data-mode="letters"] #steps{ display:none; }
+#shell[data-mode="letters"] #letters-panel{ display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; background:var(--bg); }
+
+/* ── Letters panel ── */
+#letters-scroll{ flex:1; min-height:0; overflow:auto; padding:16px; display:flex; flex-direction:column; gap:12px; }
+#letters-footer{ flex-shrink:0; padding:12px 16px 16px; border-top:1.5px solid var(--border); background:var(--bg); }
+#letters-cols{ display:flex; gap:16px; height:340px; margin-top:10px; }
+.lt-add-row{ display:flex; gap:7px; margin-bottom:8px; }
+.lt-add-row input{ flex:1; min-width:0; font:inherit; font-size:12.5px; padding:6px 9px; border:1.5px solid var(--border-med,#d9e0e6); border-radius:7px; background:var(--white); color:var(--text); }
+.lt-add-row input#lt-new-jur{ flex:0 0 100px; }
+.lt-item{ display:flex; align-items:center; gap:9px; padding:7px 9px; border-radius:7px; font-size:12.5px; color:var(--text); }
+.lt-item:hover{ background:var(--panel-bg,#eef2f6); }
+.lt-item-main{ display:flex; align-items:center; gap:9px; flex:1; min-width:0; cursor:pointer; }
+.lt-item-main span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lt-jur-input{ font:inherit; font-size:11.5px; padding:3px 6px; border:1px solid var(--border-med,#d9e0e6); border-radius:6px; background:var(--white); color:var(--text); width:88px; flex-shrink:0; }
+.lt-del{ flex-shrink:0; width:20px; height:20px; padding:0; border:none; background:transparent; color:var(--text-hint,#94a3b8); font-size:16px; line-height:18px; text-align:center; border-radius:5px; cursor:pointer; }
+.lt-del:hover{ background:#FEE2E2; color:#DC2626; }
+.lt-manual-tag{ flex-shrink:0; font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; color:var(--text-hint,#94a3b8); }
 
 /* ── Fill panel ── */
 /* ---- Fill setup: two guided step cards ---- */
@@ -1568,6 +1591,7 @@ details.pf-menu .pf-menu-pop button:hover{ background:var(--bg); color:var(--gre
   <div class="mode-switch" role="tablist" aria-label="Mode">
     <button class="mode-btn active" data-mode="tag" onclick="setMode('tag')" title="Draw and tag PDF form fields">✏️ Tag</button>
     <button class="mode-btn" data-mode="fill" onclick="setMode('fill')" title="Fill the tagged fields and export a completed application">🖊️ Fill</button>
+    <button class="mode-btn" data-mode="letters" onclick="setMode('letters')" title="Generate letters of authorization — independent of tagging or filling PDFs">📄 Letters</button>
   </div>
 
   <button class="btn-help" onclick="openHelp()" title="How to run a batch — quick guide">❔ Help</button>
@@ -1888,6 +1912,81 @@ details.pf-menu .pf-menu-pop button:hover{ background:var(--bg); color:var(--gre
     </div>
   </div>
   </div><!-- /fill-panel -->
+
+  <div id="letters-panel">
+    <div id="letters-scroll">
+      <div class="fstep" id="letters-companybar"></div>
+
+      <div class="fstep" id="letters-detailsbar">
+        <div class="fstep-head">
+          <span class="fstep-num">2</span>
+          <span class="fstep-title">Letter details</span>
+          <span class="fstep-hint">used on every letter generated below</span>
+        </div>
+        <div class="fstep-row">
+          <select id="letters-camp-sel" onchange="onLettersCampaignPick(this.value)" title="Campaign — defaults carrier/service/hours below"></select>
+          <details class="pf-menu"><summary title="Campaign actions">⚙</summary><div class="pf-menu-pop">
+            <button onclick="campaignNew();renderLettersPanel();">＋ New campaign</button>
+            <button onclick="campaignRename();renderLettersPanel();">Rename campaign</button>
+            <button onclick="campaignDelete();renderLettersPanel();">Delete campaign</button>
+            <div class="pf-menu-sep"></div>
+            <button onclick="campaignCsvTemplate()">⬇ Campaign CSV template</button>
+            <button onclick="document.getElementById('lt-camp-csv-import').click()">⬆ Import campaigns (CSV)</button>
+          </div></details>
+          <input type="file" id="lt-camp-csv-import" accept=".csv,.tsv,.txt" style="display:none" onchange="importCampaignsCSV(event);renderLettersPanel();">
+        </div>
+        <div class="fstep-row" style="margin-top:9px">
+          <label style="flex:1 1 160px">Carrier<input type="text" id="letters-carrier" placeholder="AT&amp;T" style="width:100%;box-sizing:border-box"></label>
+          <label style="flex:1 1 200px">Service description<input type="text" id="letters-service" placeholder="Internet and wireless services" style="width:100%;box-sizing:border-box"></label>
+        </div>
+        <div class="fstep-row" style="margin-top:9px">
+          <label style="flex:1 1 240px">Soliciting hours<input type="text" id="letters-hours" placeholder="1:00pm and dusk on Mondays through Fridays" style="width:100%;box-sizing:border-box"></label>
+          <label style="flex:0 0 170px">Letter date<input type="date" id="letters-date" style="width:100%;box-sizing:border-box"></label>
+        </div>
+        <div class="fstep-sub">Carrier, service, and hours default from the selected campaign — edit either field any time, just for this run.</div>
+      </div>
+
+      <div class="fstep" id="letters-picksbar">
+        <div class="fstep-head">
+          <span class="fstep-num">3</span>
+          <span class="fstep-title">Towns &amp; reps</span>
+          <span class="fstep-hint">every combination checked below gets its own letter</span>
+        </div>
+        <div id="letters-cols">
+          <div class="bm-col">
+            <div class="bm-col-head"><span>Towns</span><label class="bm-all"><input type="checkbox" id="lt-all-town" onchange="lettersToggleAll('town',this.checked)"> All</label></div>
+            <div class="lt-add-row">
+              <input type="text" id="lt-new-town" placeholder="Town name">
+              <input type="text" id="lt-new-jur" placeholder="Jurisdiction" value="Town">
+              <button class="pf-btn" onclick="lettersAddTown()">＋ Add</button>
+            </div>
+            <div class="bm-list" id="lt-town-list"></div>
+          </div>
+          <div class="bm-col">
+            <div class="bm-col-head"><span>Reps</span><label class="bm-all"><input type="checkbox" id="lt-all-rep" onchange="lettersToggleAll('rep',this.checked)"> All</label></div>
+            <input type="text" id="lt-rep-filter" class="bm-filter" placeholder="Filter reps…" oninput="lettersFilterReps(this.value)">
+            <div class="lt-add-row">
+              <input type="text" id="lt-new-rep" placeholder="Add a one-off rep name">
+              <button class="pf-btn" onclick="lettersAddManualRep()">＋ Add</button>
+            </div>
+            <div class="bm-list" id="lt-rep-list"></div>
+          </div>
+        </div>
+        <button class="pf-btn" style="margin-top:10px" onclick="lettersImportTownsFromQueue()">⬇ Import towns from my PDF queue</button>
+      </div>
+    </div>
+
+    <div id="letters-footer">
+      <div class="bm-summary" id="letters-summary">—</div>
+      <div class="bm-progress" id="letters-progress" style="display:none"></div>
+      <div class="em-btns">
+        <button class="pf-btn" onclick="previewLettersSample()" title="Open a sample letter (first checked town × first checked rep) in a new tab">👁 Preview sample</button>
+        <span style="flex:1"></span>
+        <button class="em-go" id="letters-go" onclick="lettersGenerate()">⬇ Generate letters</button>
+      </div>
+    </div>
+  </div><!-- /letters-panel -->
+
 </div><!-- /main -->
 <!-- ── QUICK CHECKBOX FLOATING BUTTON (Tag mode) ──────── -->
 <div id="cb-fab-wrap">
@@ -3726,6 +3825,7 @@ function setMode(m){
   });
   if(m==='fill'){ ensureDefaultProfile(); renderFill(); }
   else if(m==='tag'){ if(curPdf && pdfDoc){ renderPage(curPage); } renderFlist(); renderEditor(); }
+  else if(m==='letters'){ ensureDefaultProfile(); renderLettersPanel(); }
 }
 /* Unique timestamp (date + time) so re-generated files never collide or open from cache */
 function stamp(){ const d=new Date(), z=n=>String(n).padStart(2,'0'); return d.getFullYear()+z(d.getMonth()+1)+z(d.getDate())+'_'+z(d.getHours())+z(d.getMinutes())+z(d.getSeconds()); }
@@ -3907,6 +4007,7 @@ function renderMaster(){
     : '<div class="fill-empty">'+(onlyGaps?'No gaps — every used tag has a source. 🎉':(totalUsed?'Nothing matches your filter.':'No tags in use yet — tag some PDFs first.'))+'</div>';
 }
 function renderFill(){
+  if(appMode==='letters' && typeof renderLettersPanel==='function') renderLettersPanel();
   const box=document.getElementById('fill-body');
   if(!box) return;
   renderProfileBar(); renderStampBar(); syncFillTabs();
@@ -4331,7 +4432,7 @@ function profileEditConstants(showAll){
   }
   document.getElementById('pe-title').textContent='Company info — '+p.name;
   const signerTitleRow='<label class="pe-row"><span>Signer title <span class="fill-tagid">for letters of authorization</span></span>'
-    +'<input id="pe-signer-title" value="'+esc(p.signerTitle||'')+'" placeholder="President, CEO"></label>';
+    +'<input id="pe-signer-title" value="'+esc(p.signerTitle||'')+'" placeholder="Defaults to \u201cOwner, '+esc((p.values&&p.values['company.name'])||p.name)+'\u201d if left blank"></label>';
   const rowsHtml=rows.join('') || (used.size===0
         ? '<div class="fill-empty">Load and tag some PDFs first — this list then narrows to the company fields they use.</div>'
         : '<div class="fill-empty">None of your loaded PDFs use company fields.</div>');
@@ -4688,7 +4789,7 @@ function buildLetterFromPassAndTown(pass,townQ){
     website:v['company.website']||'',
     email:v['company.email']||'',
     signerName:v['company.owner_name']||v['company.contact_person']||'',
-    signerTitle:(prof&&prof.signerTitle)||'',
+    signerTitle:(prof&&prof.signerTitle&&prof.signerTitle.trim())||('Owner, '+(v['company.name']||(prof&&prof.name)||'')),
     rep:pass.rep||'',
     town:(townQ&&townQ.letter_town)||(townQ&&townQ.name.replace(/\.pdf$/i,''))||'',
     jurisdiction:(townQ&&townQ.letter_jurisdiction)||'Town',
@@ -4697,6 +4798,251 @@ function buildLetterFromPassAndTown(pass,townQ){
     service:(pass.letterOpts&&pass.letterOpts.service)||'',
     hours:(pass.letterOpts&&pass.letterOpts.hours)||''
   });
+}
+
+function formatLetterDate(iso){
+  if(!iso) return '';
+  const d=new Date(iso+'T00:00:00');
+  if(isNaN(d)) return iso;
+  return d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+}
+
+/* ══════════ LETTERS OF AUTHORIZATION — independent of Tag/Fill ══════════
+   Same generator (buildAuthLetterPdf / buildLetterFromPassAndTown) used by the in-batch
+   "Letter of auth" checkbox, but reachable on its own: no tagged PDF required. Towns and
+   one-off reps are their own small persisted lists here. */
+const SK_TOWNS='pt3_letter_towns', SK_LREPS='pt3_letter_manual_reps';
+function loadTowns(){ try{return JSON.parse(localStorage.getItem(SK_TOWNS)||'[]');}catch(e){return[];} }
+function saveTowns(l){ try{localStorage.setItem(SK_TOWNS,JSON.stringify(l));}catch(e){} }
+function loadManualReps(){ try{return JSON.parse(localStorage.getItem(SK_LREPS)||'[]');}catch(e){return[];} }
+function saveManualReps(l){ try{localStorage.setItem(SK_LREPS,JSON.stringify(l));}catch(e){} }
+
+function lettersAddTown(){
+  const nameEl=document.getElementById('lt-new-town'), jurEl=document.getElementById('lt-new-jur');
+  const name=(nameEl.value||'').trim(); if(!name){ nameEl.focus(); return; }
+  const jurisdiction=(jurEl.value||'').trim()||'Town';
+  const list=loadTowns();
+  if(list.find(t=>apNorm(t.name)===apNorm(name))){ alert('"'+name+'" is already in your towns list.'); return; }
+  list.push({id:uid(), name, jurisdiction}); saveTowns(list);
+  nameEl.value=''; jurEl.value='Town';
+  renderLettersPanel();
+}
+function lettersRemoveTown(id){
+  saveTowns(loadTowns().filter(t=>t.id!==id));
+  renderLettersPanel();
+}
+function lettersSetTownJurisdiction(id,val){
+  const list=loadTowns(); const t=list.find(x=>x.id===id);
+  if(t){ t.jurisdiction=(val||'').trim()||'Town'; saveTowns(list); }
+}
+function lettersImportTownsFromQueue(){
+  const list=loadTowns(); let added=0;
+  for(const q of pdfQueue){
+    const nm=(q.letter_town||q.name.replace(/\.pdf$/i,'')).trim(); if(!nm) continue;
+    if(list.find(t=>apNorm(t.name)===apNorm(nm))) continue;
+    list.push({id:uid(), name:nm, jurisdiction:(q.letter_jurisdiction||'Town')}); added++;
+  }
+  saveTowns(list);
+  renderLettersPanel();
+  flash(added?('\u2713 Imported '+added+' town'+(added===1?'':'s')+' from your PDF queue'):'No new towns found in your PDF queue', true);
+}
+
+function lettersAddManualRep(){
+  const el=document.getElementById('lt-new-rep');
+  const name=(el.value||'').trim(); if(!name){ el.focus(); return; }
+  const list=loadManualReps();
+  if(list.find(r=>apNorm(r.name)===apNorm(name))){ alert('"'+name+'" is already in your reps list.'); return; }
+  list.push({id:uid(), name}); saveManualReps(list);
+  el.value='';
+  renderLettersPanel();
+}
+function lettersRemoveManualRep(id){
+  saveManualReps(loadManualReps().filter(r=>r.id!==id));
+  renderLettersPanel();
+}
+/* Everyone selectable as a "rep" for a letter: whoever's loaded from a submissions CSV
+   (same list Fill/Batch use), plus any one-off names added here directly. */
+function lettersRepOptions(){
+  const fromCsv=applicants.map((a,i)=>({key:'csv:'+i, label:a.label, rep:repNameOf(a), manual:false}));
+  const manual=loadManualReps().map(r=>({key:'manual:'+r.id, id:r.id, label:r.name, rep:r.name, manual:true}));
+  return [...fromCsv, ...manual];
+}
+
+function onLettersCampaignPick(id){ setActiveCampaign(id); renderLettersPanel(); }
+function renderLettersCompanyBar(){
+  const el=document.getElementById('letters-companybar'); if(!el) return;
+  const list=loadProfiles(), aid=activeProfileId();
+  const opts=list.map(p=>'<option value="'+p.id+'"'+(p.id===aid?' selected':'')+'>'+esc(p.name)+'</option>').join('');
+  el.innerHTML=
+    '<div class="fstep-head">'
+      +'<span class="fstep-num">1</span>'
+      +'<span class="fstep-title">Company</span>'
+      +'<span class="fstep-hint">signs &amp; sends every letter below</span>'
+    +'</div>'
+    +'<div class="fstep-row">'
+      +'<select onchange="onProfileChange(this.value)" title="Which company this letter is from">'+opts+'</select>'
+      +'<button class="pf-btn" onclick="profileEditConstants()" title="Edit the company details used on the letterhead">Edit company info</button>'
+      +'<details class="pf-menu"><summary title="More company-profile actions">⚙</summary><div class="pf-menu-pop">'
+        +'<button onclick="profileNew();renderLettersPanel();">＋ New company profile</button>'
+        +'<button onclick="profileRename();renderLettersPanel();">Rename this profile</button>'
+        +'<button onclick="profileDelete();renderLettersPanel();">Delete this profile</button>'
+        +'<div class="pf-menu-sep"></div>'
+        +'<button onclick="companyCsvTemplate()">⬇ Company CSV template</button>'
+        +'<button onclick="document.getElementById(\'lt-pf-csv-import\').click()">⬆ Import companies (CSV)</button>'
+      +'</div></details>'
+      +'<input type="file" id="lt-pf-csv-import" accept=".csv,.tsv,.txt" style="display:none" onchange="importCompaniesCSV(event);renderLettersPanel();">'
+    +'</div>'
+    +'<div class="fstep-sub">Uses the same company profiles as Tag/Fill — pulls the owner company\u2019s address, EIN, and signer name onto the letterhead.</div>';
+}
+
+function lettersToggleAll(kind,on){
+  const sel=kind==='town'?'.lt-town':'.lt-rep';
+  document.querySelectorAll(sel).forEach(c=>{ if(c.closest('.lt-item').style.display!=='none') c.checked=on; });
+  updateLettersSummary();
+}
+function lettersFilterReps(q){
+  q=(q||'').trim().toLowerCase();
+  document.querySelectorAll('#lt-rep-list .lt-item').forEach(it=>{
+    it.style.display=(!q || (it.dataset.lbl||'').includes(q))?'':'none';
+  });
+}
+function updateLettersSummary(){
+  const T=document.querySelectorAll('.lt-town:checked').length;
+  const R=document.querySelectorAll('.lt-rep:checked').length;
+  const n=T*R;
+  const el=document.getElementById('letters-summary');
+  if(el) el.textContent=T+' town'+(T===1?'':'s')+' \u00D7 '+R+' rep'+(R===1?'':'s')+' = '+n+' letter'+(n===1?'':'s');
+  const go=document.getElementById('letters-go'); if(go) go.disabled=(n===0);
+}
+
+function renderLettersPanel(){
+  if(appMode!=='letters') return;
+  renderLettersCompanyBar();
+
+  // Campaign selector + carrier/service/hours defaults (only fill blanks — never clobber an edit)
+  const sel=document.getElementById('letters-camp-sel');
+  if(sel){
+    const camps=loadCampaigns(), aid=activeCampaignId();
+    sel.innerHTML='<option value="">\u2014 No campaign \u2014</option>'+camps.map(c=>'<option value="'+c.id+'"'+(c.id===aid?' selected':'')+'>'+esc(c.name)+'</option>').join('');
+  }
+  const camp=getActiveCampaign();
+  const carrierEl=document.getElementById('letters-carrier');
+  const serviceEl=document.getElementById('letters-service');
+  const hoursEl=document.getElementById('letters-hours');
+  const dateEl=document.getElementById('letters-date');
+  if(carrierEl && !carrierEl.value) carrierEl.value=(camp&&camp.name)||'';
+  if(serviceEl && !serviceEl.value) serviceEl.value=(camp&&camp.values&&camp.values['auth.products'])||'Internet and wireless services';
+  if(hoursEl && !hoursEl.value){
+    const hf=camp&&camp.values&&camp.values['permit.hours_from'];
+    const ht=camp&&camp.values&&camp.values['permit.hours_to'];
+    hoursEl.value=(hf&&ht)?(hf+' to '+ht+', Mondays through Fridays'):'';
+  }
+  if(dateEl && !dateEl.value){
+    const d=new Date(); dateEl.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  // Towns list
+  const towns=loadTowns();
+  const tl=document.getElementById('lt-town-list');
+  if(tl){
+    tl.innerHTML = towns.length ? towns.map(t=>
+      '<div class="lt-item">'
+       +'<label class="lt-item-main"><input type="checkbox" class="lt-town" value="'+t.id+'" onchange="updateLettersSummary()"><span title="'+esc(t.name)+'">'+esc(t.name)+'</span></label>'
+       +'<input type="text" class="lt-jur-input" value="'+esc(t.jurisdiction||'Town')+'" title="Jurisdiction type" onchange="lettersSetTownJurisdiction(\''+t.id+'\',this.value)">'
+       +'<button class="lt-del" title="Remove this town" onclick="lettersRemoveTown(\''+t.id+'\')">\u00D7</button>'
+      +'</div>'
+    ).join('') : '<div class="bm-empty">No towns yet \u2014 add one above, or import from your PDF queue.</div>';
+  }
+
+  // Reps list — CSV-loaded reps first, then manual one-offs (removable)
+  const reps=lettersRepOptions();
+  const rl=document.getElementById('lt-rep-list');
+  if(rl){
+    rl.innerHTML = reps.length ? reps.map(r=>
+      '<div class="lt-item" data-lbl="'+esc(r.label.toLowerCase())+'">'
+       +'<label class="lt-item-main"><input type="checkbox" class="lt-rep" value="'+esc(r.key)+'" onchange="updateLettersSummary()"><span title="'+esc(r.label)+'">'+esc(r.label)+'</span></label>'
+       +(r.manual?'<span class="lt-manual-tag">added here</span><button class="lt-del" title="Remove" onclick="lettersRemoveManualRep(\''+r.id+'\')">\u00D7</button>':'<span class="lt-manual-tag">from CSV</span>')
+      +'</div>'
+    ).join('') : '<div class="bm-empty">No reps yet \u2014 load a submissions CSV in Fill mode, or add a one-off name above.</div>';
+  }
+  updateLettersSummary();
+}
+
+function computeLettersSelection(){
+  const townIds=[...document.querySelectorAll('.lt-town:checked')].map(c=>c.value);
+  if(!townIds.length){ alert('Pick at least one town.'); return null; }
+  const towns=loadTowns().filter(t=>townIds.includes(t.id));
+  const repKeys=[...document.querySelectorAll('.lt-rep:checked')].map(c=>c.value);
+  if(!repKeys.length){ alert('Pick at least one rep.'); return null; }
+  const reps=lettersRepOptions().filter(r=>repKeys.includes(r.key));
+  const prof=getActiveProfile();
+  const letterOpts={
+    carrier:(document.getElementById('letters-carrier')||{}).value||'',
+    service:(document.getElementById('letters-service')||{}).value||'',
+    hours:(document.getElementById('letters-hours')||{}).value||''
+  };
+  const letterDate=formatLetterDate((document.getElementById('letters-date')||{}).value||'');
+  return {towns, reps, prof, letterOpts, letterDate};
+}
+
+async function previewLettersSample(){
+  const sel=computeLettersSelection(); if(!sel) return;
+  const {towns,reps,prof,letterOpts,letterDate}=sel;
+  const town=towns[0], rep=reps[0];
+  try{
+    const townQ={name:town.name+'.pdf', letter_town:town.name, letter_jurisdiction:town.jurisdiction};
+    const bytes=await buildLetterFromPassAndTown({rep:rep.rep, prof, letterOpts, letterDate}, townQ);
+    const blob=new Blob([bytes],{type:'application/pdf'});
+    const url=URL.createObjectURL(blob);
+    const w=window.open(url,'_blank');
+    if(!w) dlBlob('preview_letter_'+stamp()+'.pdf', blob);
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(err){ alert('Could not build the preview: '+err.message); }
+}
+
+async function lettersGenerate(){
+  const sel=computeLettersSelection(); if(!sel) return;
+  const {towns,reps,prof,letterOpts,letterDate}=sel;
+  const total=towns.length*reps.length;
+  const prog=document.getElementById('letters-progress'); if(prog){ prog.style.display=''; prog.textContent='Starting\u2026'; }
+  const go=document.getElementById('letters-go'); if(go) go.disabled=true;
+  const items=[]; const failed=[]; const usedNames={}; let done=0;
+  for(const town of towns){
+    for(const rep of reps){
+      done++;
+      const townQ={name:town.name+'.pdf', letter_town:town.name, letter_jurisdiction:town.jurisdiction};
+      try{
+        const bytes=await buildLetterFromPassAndTown({rep:rep.rep, prof, letterOpts, letterDate}, townQ);
+        const stem=fileSafe((rep.rep?rep.rep+' ':'')+town.name+' - Letter of Authorization');
+        let fn=stem+'.pdf';
+        if(usedNames[fn]!=null){ fn=stem+' ('+(++usedNames[fn])+').pdf'; } else { usedNames[stem+'.pdf']=1; }
+        items.push({fn, bytes, town:town.name, jurisdiction:town.jurisdiction, rep:rep.rep});
+      }catch(err){ failed.push(town.name+' / '+(rep.rep||'\u2014')+' \u2014 '+err.message); }
+      if(prog) prog.textContent='Generating '+done+' / '+total+'\u2026';
+      await new Promise(r=>setTimeout(r,0));
+    }
+  }
+  if(go) go.disabled=false;
+  if(!items.length){
+    if(prog) prog.style.display='none';
+    alert('No letters could be generated.\n\n'+(failed.join('\n')||'Unknown error.'));
+    return;
+  }
+  if(items.length===1 && !failed.length){
+    dlBytes(items[0].fn, items[0].bytes);
+  }else{
+    const zip=new JSZip();
+    for(const it of items) zip.file(it.fn, it.bytes);
+    zip.file('letters_records.json', JSON.stringify({_type:'permittag_letters', generatedAt:new Date().toISOString(), count:items.length,
+      records:items.map(({fn,town,jurisdiction,rep})=>({file:fn,town,jurisdiction,rep}))}, null, 2));
+    const blob=await zip.generateAsync({type:'blob',compression:'DEFLATE',compressionOptions:{level:6}});
+    dlBlob('letters_of_authorization_'+stamp()+'.zip', blob);
+  }
+  if(prog) prog.style.display='none';
+  let msg='\u2713 '+items.length+' letter'+(items.length===1?'':'s')+' generated';
+  if(failed.length) msg+=' \u2014 '+failed.length+' failed';
+  flash(msg, !failed.length);
+  if(failed.length) alert('Some letters could not be generated:\n\n'+failed.join('\n'));
 }
 
 async function runBatch(sel){
